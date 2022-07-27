@@ -179,18 +179,18 @@ module Sidekiq
 
       def process_successful_job(bid, jid)
         failed, pending, children, complete, success, total, parent_bid = Sidekiq.redis do |r|
-          r.multi do
-            r.scard("BID-#{bid}-failed")
-            r.hincrby("BID-#{bid}", "pending", -1)
-            r.hincrby("BID-#{bid}", "children", 0)
-            r.scard("BID-#{bid}-complete")
-            r.scard("BID-#{bid}-success")
-            r.hget("BID-#{bid}", "total")
-            r.hget("BID-#{bid}", "parent_bid")
+          r.multi do |pipeline|
+            pipeline.scard("BID-#{bid}-failed")
+            pipeline.hincrby("BID-#{bid}", "pending", -1)
+            pipeline.hincrby("BID-#{bid}", "children", 0)
+            pipeline.scard("BID-#{bid}-complete")
+            pipeline.scard("BID-#{bid}-success")
+            pipeline.hget("BID-#{bid}", "total")
+            pipeline.hget("BID-#{bid}", "parent_bid")
 
-            r.srem("BID-#{bid}-failed", jid)
-            r.srem("BID-#{bid}-jids", jid)
-            r.expire("BID-#{bid}", BID_EXPIRE_TTL)
+            pipeline.srem("BID-#{bid}-failed", jid)
+            pipeline.srem("BID-#{bid}-jids", jid)
+            pipeline.expire("BID-#{bid}", BID_EXPIRE_TTL)
           end
         end
 
@@ -206,13 +206,13 @@ module Sidekiq
         batch_key = "BID-#{bid}"
         callback_key = "#{batch_key}-callbacks-#{event}"
         already_processed, _, callbacks, queue, parent_bid, callback_batch = Sidekiq.redis do |r|
-          r.multi do
-            r.hget(batch_key, event)
-            r.hset(batch_key, event, true)
-            r.smembers(callback_key)
-            r.hget(batch_key, "callback_queue")
-            r.hget(batch_key, "parent_bid")
-            r.hget(batch_key, "callback_batch")
+          r.multi do |pipeline|
+            pipeline.hget(batch_key, event)
+            pipeline.hset(batch_key, event, true)
+            pipeline.smembers(callback_key)
+            pipeline.hget(batch_key, "callback_queue")
+            pipeline.hget(batch_key, "parent_bid")
+            pipeline.hget(batch_key, "callback_batch")
           end
         end
 
