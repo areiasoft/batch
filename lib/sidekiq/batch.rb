@@ -173,7 +173,7 @@ module Sidekiq
         end
 
         if pending.to_i == failed.to_i && children == complete
-          enqueue_callbacks(:complete, bid)
+          enqueue_callbacks('complete', bid)
         end
       end
 
@@ -197,8 +197,8 @@ module Sidekiq
         all_success = pending.to_i.zero? && children == success
         # if complete or successfull call complete callback (the complete callback may then call successful)
         if (pending.to_i == failed.to_i && children == complete) || all_success
-          enqueue_callbacks(:complete, bid)
-          enqueue_callbacks(:success, bid) if all_success
+          enqueue_callbacks('complete', bid)
+          enqueue_callbacks('success', bid) if all_success
         end
       end
 
@@ -283,7 +283,7 @@ module Sidekiq
 
       def push_callbacks args, queue
         Sidekiq::Client.push_bulk(
-          'class' => Sidekiq::Batch::Callback::Worker,
+          'class' => 'Sidekiq::Batch::Callback::Worker',
           'args' => args,
           'queue' => queue
         ) unless args.empty?
